@@ -98,25 +98,32 @@ int main() {
           // printf("PID: %d\n", getpid());
           exit(0); //Child successfully exits. This is good.
         }
-
-        // Clean up anything left over
-        int i=0;
-        for(i = 0; i<numArgs; ++i)
+        else
         {
-          if(args[i])
+          int status;
+          wait(&status);
+          printf("PARENT: child's exit code: %d\n", WEXITSTATUS(status));
+          // Clean up anything left over
+          int i=0;
+          for(i = 0; i<numArgs; ++i)
           {
-            free(args[i]);
-            args[i] = NULL;
+            if(args[i])
+            {
+              free(args[i]);
+              args[i] = NULL;
+            }
           }
+          EmptyQueue();
         }
-        EmptyQueue();
+
+
       }
       else
       {
         perror("fork"); //Display an error message
         exit(0);
       }
-      usleep(500 * 1000); //Sleep for 500MS
+      usleep(500 * 1000); //Sleep for 500MS (So the input message can appear after)
     }
   }
   printf("RSI:  Exiting normally.\n");
