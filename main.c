@@ -20,12 +20,12 @@ char* getPrompt()
 {
   char* buffer = malloc(sizeof(char) * BUFFER_SIZE);
   memset(buffer, '\0', BUFFER_SIZE); //Fill memory with null terminators
+  getcwd(cwd, BUFFER_SIZE);
   sprintf(buffer, "RSI: %s >", cwd);
   return buffer;
 }
 
 int main() {
-  getcwd(cwd, BUFFER_SIZE); // store CWD
   char* prompt = getPrompt();
   int bailout = 1;
 
@@ -45,26 +45,78 @@ int main() {
       }
 
       char* cmd = PopFromQueue();
+      if(cmd == NULL)
+      {
+        continue; //User didnt enter anything - restart
+      }
 
-      // 2. If "cd", then change directory by chdir()
-      if(strcmp(cmd, "cd"))
+      // 2. If "cd", then change directory by chdir().
+      if(!strcmp(cmd, "cd"))
       {
         char* args = PopFromQueue();
         if(args != 0)
         {
-          chdir(args);
+          if(!strcmp(args, "~"))
+          {
+            chdir("/home"); //User went cd ~ (treat as home)
+          }
+          else
+          {
+            chdir(args);
+          }
         }
         else
         {
-          chdir("~");
+          chdir("/home"); //No args -> change dir to home
         }
         free(args);
+        prompt = getPrompt(); //Update with a new prompt
       }
-
 
       // 3. Else, execute command by fork() and exec()
 
-      EmptyQueue(); //Clean up anything left over in the queue
+      //Read in the arguments from the queue and store them into an array.
+      int numArgs = SizeOfQueue() + 1; //Add one for the first arg to be the cmd (IE: ECHO or MKDIR)
+      char* args[numArgs + 1]; //Allocated enough space for everything in the array PLUS 1 (for a null terminator)
+      int arrPos;
+
+      args[0] = cmd;
+      for(arrPos = 1; arrPos < numArgs; ++arrPos)
+      {
+        args[arrPos] = PopFromQueue();
+      }
+      args[numArgs] = 0; //null terminate it
+
+      pid_t child = fork();
+      if(child >= 0)
+      {
+        if(child == 0) //Execute the forked code in the child only.
+        {
+          if(execvp(cmd, args) < 0){
+            perror("Error on execvp");
+          }
+          // printf("PID: %d\n", getpid());
+          exit(0); //Child successfully exits. This is good.
+        }
+
+        // Clean up anything left over
+        int i=0;
+        for(i = 0; i<numArgs; ++i)
+        {
+          if(args[i])
+          {
+            free(args[i]);
+            args[i] = NULL;
+          }
+        }
+        EmptyQueue();
+      }
+      else
+      {
+        perror("fork"); //Display an error message
+        exit(0);
+      }
+      usleep(500 * 1000); //Sleep for 500MS
     }
   }
   printf("RSI:  Exiting normally.\n");
