@@ -1,3 +1,13 @@
+/*
+Brett Binnersley,
+V00776751
+Csc 360
+Assignment #1
+
+Simple queue - used for processing user input. IE: They give us 4 arguments (a, b, c, d)
+then we can read them off in the order that they were inserted
+*/
+
 #define BUFFER_SIZE 1024
 
 struct QueueItem {

@@ -5,13 +5,12 @@
 #Csc 360, Assignment #1
 #
 
-all: makeMain
+all: makeRsi
 
-clean:
-	cleanItems
+clean: cleanItems
 
-makeMain:
-	gcc main.c -lreadline  -o main
+makeRsi:
+	gcc rsi.c -o rsi
 
 cleanItems:
 	-rm -rf *.o *.exe
